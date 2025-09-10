@@ -5,6 +5,21 @@
 #include "Employee.h"
 
 int main(int argc, char* argv[]) {
+    bool isTestMode = false;
+
+    // Проверяем, есть ли флаг --test-mode
+    for (int i = 1; i < argc; i++) {
+        if (std::string(argv[i]) == "--test-mode") {
+            isTestMode = true;
+            break;
+        }
+    }
+
+    if (argc < 4) {
+        std::cerr << "Not enough args!";
+        if (!isTestMode) system("pause");
+        return 1;
+    }
     char* binaryFileName = argv[1];
     char* outputFileName = argv[2];
     employee emp;
@@ -51,8 +66,10 @@ int main(int argc, char* argv[]) {
     }
     catch (const std::exception& ex) {
         std::cerr << "Reporter error: " << ex.what() << std::endl;
-        std::cerr << "Press any key to close this window...";
-        system("pause");
+        if (!isTestMode) {
+            std::cerr << "Press any key to close this window...";
+            system("pause");
+        }
         return 1;
     }
 

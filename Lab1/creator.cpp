@@ -1,10 +1,16 @@
 #include <iostream>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <set>
 #include "Employee.h"
 
 int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Not enough args!";
+        return 1;
+    }
+
     int lineCount = std::atoi(argv[2]);
     std::string binaryFileName = argv[1];
 
