@@ -6,6 +6,8 @@
 
 int main() {
     ThreadHandler threadHandler;
+    HANDLE minMaxThread;
+    HANDLE averageThread;
     int n;
 
     try {
@@ -22,8 +24,11 @@ int main() {
         array.inputArray();
         array.printArray();
 
-        threadHandler.createThread(std::string("min_max"), array);
-        threadHandler.createThread(std::string("average"), array);
+        minMaxThread = threadHandler.createThread(std::string("min_max"), array);
+        averageThread = threadHandler.createThread(std::string("average"), array);
+
+        threadHandler.clearThreadResources(minMaxThread);
+        threadHandler.clearThreadResources(averageThread);
 
         array.switchMaxAndMinOnAverage();
         array.printArray();

@@ -92,7 +92,7 @@ int Array::calculateAverageValue() {
     int sum = 0;
     for (int i = 0; i < size; i++) {
         sum += array[i];
-        Sleep(7);
+        Sleep(12);
     }
     averageValue = sum / size;
 

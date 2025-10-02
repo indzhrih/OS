@@ -2,7 +2,7 @@
 #include <windows.h>
 #include "../Headers/ThreadHandler.h"
 
-void ThreadHandler::createThread(const std::string& threadName, Array& array) {
+HANDLE ThreadHandler::createThread(const std::string& threadName, Array& array) {
     HANDLE thread;
 
     try {
@@ -22,7 +22,7 @@ void ThreadHandler::createThread(const std::string& threadName, Array& array) {
             throw std::invalid_argument("Error, wrong thread name");
         }
 
-        clearThreadResources(thread);
+        return thread;
     }
     catch (const std::exception& e) {
         std::cerr << "Thread handler error: " << e.what() << std::endl;
@@ -54,6 +54,7 @@ DWORD WINAPI ThreadHandler::average(LPVOID threadParam) {
     try {
         Array* array = static_cast<Array*>(threadParam);
 
+        Sleep(1000);
         std::cout << "Average value: " << array->calculateAverageValue() << std::endl;
     }
     catch (const std::exception& e) {

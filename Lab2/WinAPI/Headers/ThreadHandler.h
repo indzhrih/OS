@@ -7,11 +7,10 @@
 
 class ThreadHandler {
 public:
-    void createThread(const std::string& threadName, Array& array);
-
-private:
+    HANDLE createThread(const std::string& threadName, Array& array);
     void clearThreadResources(HANDLE thread);
 
+private:
     static DWORD WINAPI minMax(LPVOID threadParam);
     static DWORD WINAPI average(LPVOID threadParam);
 };
