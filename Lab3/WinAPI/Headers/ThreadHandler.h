@@ -1,0 +1,8 @@
+#ifndef LAB3_WINAPI_THREADHANDLER_H
+#define LAB3_WINAPI_THREADHANDLER_H
+
+#include <windows.h>
+
+DWORD WINAPI threadWorker(LPVOID threadParam);
+
+#endif // LAB3_WINAPI_THREADHANDLER_H
