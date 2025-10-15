@@ -29,7 +29,7 @@ void Array::printArray() {
 
 void Array::checkArrayInitialization() {
     if (size <= 0 || array == nullptr) {
-        throw std::out_of_range("Cannot switch elements in an empty or uninitialized array.");
+        throw std::out_of_range("Array is empty or uninitialized.");
     }
 }
 
