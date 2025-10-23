@@ -1,3 +1,5 @@
 .idea/
 cmake-build-*/
+build*/
+Reports*/
 Lab1/tests/input_data/
