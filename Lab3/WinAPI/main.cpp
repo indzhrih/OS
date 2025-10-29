@@ -27,10 +27,13 @@ int main() {
             std::cout << "Please enter a positive integer for marker threads number: " << std::endl;
         }
 
-        HANDLE startThreadsEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (startThreadsEvent == NULL) {
-            DWORD ec = GetLastError();
-            throw std::runtime_error("CreateEvent(startThreadsEvent) failed, GetLastError=" + std::to_string(ec));
+        HANDLE* startEvents = new HANDLE[markerThreadsNumber];
+        for (int i = 0; i < markerThreadsNumber; i++) {
+            startEvents[i] = CreateEvent(NULL, FALSE, FALSE, NULL);
+            if (startEvents[i] == NULL) {
+                DWORD ec = GetLastError();
+                throw std::runtime_error("CreateEvent(startEvents[i]) failed, GetLastError=" + std::to_string(ec));
+            }
         }
 
         HANDLE* stopEvents = new HANDLE[markerThreadsNumber];
@@ -56,17 +59,12 @@ int main() {
 
         Thread** threads = new Thread*[markerThreadsNumber];
         for (int i = 0; i < markerThreadsNumber; i++) {
-            threads[i] = new Thread(startThreadsEvent, endEvents[i], stopEvents[i], &criticalSection,
+            threads[i] = new Thread(startEvents[i], endEvents[i], stopEvents[i], &criticalSection,
                                     &array, i + 1, n);
         }
 
         bool* isAlive = new bool[markerThreadsNumber];
         for (int i = 0; i < markerThreadsNumber; ++i) isAlive[i] = true;
-
-        if (!SetEvent(startThreadsEvent)) {
-            DWORD ec = GetLastError();
-            throw std::runtime_error("SetEvent(startThreadsEvent) failed, GetLastError=" + std::to_string(ec));
-        }
 
         int activeThreads = markerThreadsNumber;
         while (activeThreads > 0) {
@@ -74,9 +72,26 @@ int main() {
             std::cout << "Waiting for threads signals." << std::endl;
             LeaveCriticalSection(&criticalSection);
 
-            if (!ResetEvent(startThreadsEvent)) {
-                DWORD ec = GetLastError();
-                throw std::runtime_error("ResetEvent(startThreadsEvent) failed, GetLastError=" + std::to_string(ec));
+            for (int i = 0; i < markerThreadsNumber; i++) {
+                if (isAlive[i]) {
+                    if (!ResetEvent(stopEvents[i])) {
+                        DWORD ec = GetLastError();
+                        throw std::runtime_error("ResetEvent(stopEvents[i]) failed, GetLastError=" + std::to_string(ec));
+                    }
+                    if (!ResetEvent(endEvents[i])) {
+                        DWORD ec = GetLastError();
+                        throw std::runtime_error("ResetEvent(endEvents[i]) failed, GetLastError=" + std::to_string(ec));
+                    }
+                }
+            }
+
+            for (int i = 0; i < markerThreadsNumber; ++i) {
+                if (isAlive[i]) {
+                    if (!SetEvent(startEvents[i])) {
+                        DWORD ec = GetLastError();
+                        throw std::runtime_error("SetEvent(startEvents[i]) failed, GetLastError=" + std::to_string(ec));
+                    }
+                }
             }
 
             int waitCount = 0;
@@ -144,25 +159,6 @@ int main() {
             std::cout << "Array after thread " << threadToStop << " finished: ";
             array.printArray();
             LeaveCriticalSection(&criticalSection);
-
-            if (activeThreads > 0) {
-                for (int i = 0; i < markerThreadsNumber; i++) {
-                    if (isAlive[i]) {
-                        if (!ResetEvent(stopEvents[i])) {
-                            DWORD ec = GetLastError();
-                            throw std::runtime_error("ResetEvent(stopEvents[i]) failed, GetLastError=" + std::to_string(ec));
-                        }
-                        if (!ResetEvent(endEvents[i])) {
-                            DWORD ec = GetLastError();
-                            throw std::runtime_error("ResetEvent(endEvents[i]) failed, GetLastError=" + std::to_string(ec));
-                        }
-                    }
-                }
-                if (!SetEvent(startThreadsEvent)) {
-                    DWORD ec = GetLastError();
-                    throw std::runtime_error("SetEvent(startThreadsEvent) failed, GetLastError=" + std::to_string(ec));
-                }
-            }
         }
 
         EnterCriticalSection(&criticalSection);
@@ -170,10 +166,10 @@ int main() {
         array.printArray();
         LeaveCriticalSection(&criticalSection);
 
-        CloseHandle(startThreadsEvent);
         for (int i = 0; i < markerThreadsNumber; i++) {
-            CloseHandle(stopEvents[i]);
-            CloseHandle(endEvents[i]);
+            if (startEvents[i]) CloseHandle(startEvents[i]);
+            if (stopEvents[i]) CloseHandle(stopEvents[i]);
+            if (endEvents[i]) CloseHandle(endEvents[i]);
         }
         DeleteCriticalSection(&criticalSection);
 
@@ -184,6 +180,7 @@ int main() {
             }
         }
 
+        delete[] startEvents;
         delete[] endEvents;
         delete[] stopEvents;
         delete[] isAlive;

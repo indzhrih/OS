@@ -31,7 +31,10 @@ int main() {
             std::cout << "Please enter a positive integer for marker threads number: " << std::endl;
         }
 
-        Event* startThreadsEvent = new Event(true, false);
+        Event** startEvents = new Event*[markerThreadsNumber];
+        for (int i = 0; i < markerThreadsNumber; ++i) {
+            startEvents[i] = new Event(false, false);
+        }
 
         Event** stopEvents = new Event*[markerThreadsNumber];
         for (int i = 0; i < markerThreadsNumber; i++) {
@@ -47,16 +50,12 @@ int main() {
 
         Thread** threads = new Thread*[markerThreadsNumber];
         for (int i = 0; i < markerThreadsNumber; i++) {
-            threads[i] = new Thread(startThreadsEvent, endEvents[i], stopEvents[i],
+            threads[i] = new Thread(startEvents[i], endEvents[i], stopEvents[i],
                                     &criticalSection, &array, i + 1, n);
         }
 
         bool* isAlive = new bool[markerThreadsNumber];
-        for (int i = 0; i < markerThreadsNumber; i++) {
-            isAlive[i] = true;
-        }
-
-        startThreadsEvent->set();
+        for (int i = 0; i < markerThreadsNumber; i++) isAlive[i] = true;
 
         int activeThreads = markerThreadsNumber;
         while (activeThreads > 0) {
@@ -64,20 +63,26 @@ int main() {
             std::cout << "Waiting for threads signals." << std::endl;
             criticalSection.unlock();
 
+            for (int i = 0; i < markerThreadsNumber; i++) {
+                if (isAlive[i]) {
+                    stopEvents[i]->reset();
+                    endEvents[i]->reset();
+                }
+            }
+
+            for (int i = 0; i < markerThreadsNumber; ++i) {
+                if (isAlive[i]) {
+                    startEvents[i]->set();
+                }
+            }
+
             while (true) {
                 bool allSet = true;
                 for (int i = 0; i < markerThreadsNumber; i++) {
-                    if (isAlive[i]) {
-                        if (!stopEvents[i]->is_set()) {
-                            allSet = false;
-                            break;
-                        }
-                    }
+                    if (isAlive[i] && !stopEvents[i]->is_set()) { allSet = false; break; }
                 }
                 if (allSet) break;
             }
-
-            startThreadsEvent->reset();
 
             criticalSection.lock();
             array.printArray();
@@ -107,6 +112,7 @@ int main() {
             }
 
             endEvents[threadToStop - 1]->set();
+            startEvents[threadToStop - 1]->set();
 
             criticalSection.lock();
             std::cout << "Waiting for thread " << threadToStop << " to finish..." << std::endl;
@@ -114,7 +120,7 @@ int main() {
 
             threads[threadToStop - 1]->wait();
             delete threads[threadToStop - 1];
-            threads[threadToStop - 1] = 0;
+            threads[threadToStop - 1] = nullptr;
 
             isAlive[threadToStop - 1] = false;
             activeThreads--;
@@ -123,16 +129,6 @@ int main() {
             std::cout << "Array after thread " << threadToStop << " finished: ";
             array.printArray();
             criticalSection.unlock();
-
-            if (activeThreads > 0) {
-                for (int i = 0; i < markerThreadsNumber; i++) {
-                    if (isAlive[i]) {
-                        stopEvents[i]->reset();
-                        endEvents[i]->reset();
-                    }
-                }
-                startThreadsEvent->set();
-            }
         }
 
         criticalSection.lock();
@@ -141,7 +137,7 @@ int main() {
         criticalSection.unlock();
 
         for (int i = 0; i < markerThreadsNumber; i++) {
-            if (threads[i] != 0) {
+            if (threads[i] != nullptr) {
                 threads[i]->wait();
                 delete threads[i];
             }
@@ -150,11 +146,12 @@ int main() {
         for (int i = 0; i < markerThreadsNumber; i++) {
             delete endEvents[i];
             delete stopEvents[i];
+            delete startEvents[i];
         }
         delete[] endEvents;
         delete[] stopEvents;
+        delete[] startEvents;
 
-        delete startThreadsEvent;
         delete[] isAlive;
         delete[] threads;
 

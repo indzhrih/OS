@@ -17,7 +17,7 @@ Thread::Thread(HANDLE startEvent, HANDLE endEvent, HANDLE stopEvent, CRITICAL_SE
         !this->criticalSection || !this->array || this->arraySize <= 0 || this->threadNumber <= 0) {
 
         throw std::invalid_argument("Invalid arguments passed to Thread constructor");
-    }
+        }
 
     handle = CreateThread(NULL, 0, threadWorker, this, 0, &threadId);
     if (handle == NULL) {
