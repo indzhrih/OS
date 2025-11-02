@@ -1,0 +1,82 @@
+#include <iostream>
+#include <string>
+#include <windows.h>
+#include "Headers/Message.h"
+#include "Headers/MessageRingQueue.h"
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Not enough args!";
+        return 1;
+    }
+
+    int command;
+    FILE* binaryFile;
+
+    std::string binaryFileName = argv[1];
+
+    try {
+        HANDLE readyEvent = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "ReadyEvent");
+        HANDLE messageSemaphore = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, "MessageSemaphore");
+        HANDLE binaryFileMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, "BinaryFileMutex");
+
+        if (!readyEvent || !messageSemaphore || !binaryFileMutex) {
+            std::cerr << "Error opening synchronization objects" << std::endl;
+            return 1;
+        }
+
+        std::cout << "Waiting for Receiver to be ready..." << std::endl;
+        WaitForSingleObject(readyEvent, INFINITE);
+        std::cout << "Receiver is ready!" << std::endl;
+
+        while (true) {
+            std::cout << "Enter command:\n"
+                      << "1. Send\n"
+                      << "2. Exit\n";
+            std::cin >> command;
+            std::cin.ignore();
+
+            switch (command) {
+                case 1: {
+                    Message message;
+                    std::cout << "Enter your message: " << std::endl;
+
+                    std::cin.getline(message.text, sizeof(message.text));
+
+                    if (std::cin.fail()) {
+                        std::cin.clear();
+                        std::cin.ignore(10000, '\n');
+                    }
+
+                    WaitForSingleObject(binaryFileMutex, INFINITE);
+
+                    binaryFile = fopen(binaryFileName.c_str(), "wb");
+                    if (!binaryFile) throw std::runtime_error("Failed to open output file: " + binaryFileName);
+
+                    fwrite(&message, sizeof(Message), 1, binaryFile);
+                    fclose(binaryFile);
+
+                    ReleaseMutex(binaryFileMutex);
+
+                    ReleaseSemaphore(messageSemaphore, 1, NULL);
+
+                    std::cout << "Message sent" << std::endl;
+                    break;
+                }
+                case 2:
+                    std::cout << "Exiting..." << std::endl;
+                    return 0;
+                default:
+                    std::cout << "Wrong input!" << std::endl;
+                    std::cin.ignore(10000, '\n');
+                    break;
+            }
+        }
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Sender error: " << ex.what() << "\n";
+        std::cerr << "Press any key to close this window...";
+        system("pause");
+        return 1;
+    }
+}
