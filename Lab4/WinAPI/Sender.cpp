@@ -2,7 +2,6 @@
 #include <string>
 #include <windows.h>
 #include "Headers/Message.h"
-#include "Headers/MessageRingQueue.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -33,8 +32,14 @@ int main(int argc, char* argv[]) {
             std::cout << "Enter command:\n"
                       << "1. Send\n"
                       << "2. Exit\n";
-            std::cin >> command;
-            std::cin.ignore();
+
+            if (!(std::cin >> command)) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                std::cout << "Wrong input!" << std::endl;
+                continue;
+            }
+            std::cin.ignore(10000, '\n');
 
             switch (command) {
                 case 1: {
@@ -50,15 +55,21 @@ int main(int argc, char* argv[]) {
 
                     WaitForSingleObject(binaryFileMutex, INFINITE);
 
-                    binaryFile = fopen(binaryFileName.c_str(), "wb");
-                    if (!binaryFile) throw std::runtime_error("Failed to open output file: " + binaryFileName);
+                    binaryFile = fopen(binaryFileName.c_str(), "ab");
+                    if (!binaryFile) {
+                        ReleaseMutex(binaryFileMutex);
+                        std::cerr << "Failed to open output file\n";
+                        break;
+                    }
 
                     fwrite(&message, sizeof(Message), 1, binaryFile);
                     fclose(binaryFile);
 
                     ReleaseMutex(binaryFileMutex);
 
-                    ReleaseSemaphore(messageSemaphore, 1, NULL);
+                    if (!ReleaseSemaphore(messageSemaphore, 1, NULL)) {
+                        std::cerr << "ReleaseSemaphore failed, err=" << GetLastError() << std::endl;
+                    }
 
                     std::cout << "Message sent" << std::endl;
                     break;
@@ -68,7 +79,6 @@ int main(int argc, char* argv[]) {
                     return 0;
                 default:
                     std::cout << "Wrong input!" << std::endl;
-                    std::cin.ignore(10000, '\n');
                     break;
             }
         }
