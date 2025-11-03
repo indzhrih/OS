@@ -7,11 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED on)
 add_executable(Receiver Receiver.cpp
                         Headers/Message.h
                         Headers/MessageRingQueue.h
+                        Headers/ExceptionHandler.h
                         Source/Message.cpp
-                        Source/MessageRingQueue.cpp)
+                        Source/MessageRingQueue.cpp
+                        Source/ExceptionHandler.cpp)
 
 add_executable(Sender Sender.cpp
                       Headers/Message.h
                       Headers/MessageRingQueue.h
+                      Headers/ExceptionHandler.h
                       Source/Message.cpp
-                      Source/MessageRingQueue.cpp)
+                      Source/MessageRingQueue.cpp
+                      Source/ExceptionHandler.cpp)

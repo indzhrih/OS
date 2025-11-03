@@ -2,6 +2,7 @@
 #include <string>
 #include <windows.h>
 #include "Headers/Message.h"
+#include "Headers/ExceptionHandler.h"
 
 int main(int argc, char* argv[]) {
     FILE* binaryFile;
@@ -14,43 +15,41 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Enter number of records: " << std::endl;
     while (!(std::cin >> recordsNumber) || recordsNumber <= 0) {
-        std::cin.clear();
-        std::cin.ignore(10000, '\n');
+        ExceptionHandler::clearInput();
         std::cout << "Wrong input! Enter positive integer: " << std::endl;
     }
 
     binaryFile = fopen(binaryFileName.c_str(), "wb");
-    if (!binaryFile) {
-        std::cerr << "Failed to create file" << std::endl;
-        return 1;
-    }
+    if (!ExceptionHandler::checkFile(binaryFile, "create file")) return 1;
     fclose(binaryFile);
 
     std::cout << "Enter number of senders: " << std::endl;
     while (!(std::cin >> sendersNumber) || sendersNumber <= 0) {
-        std::cin.clear();
-        std::cin.ignore(10000, '\n');
+        ExceptionHandler::clearInput();
         std::cout << "Wrong input! Enter positive integer: " << std::endl;
     }
 
     HANDLE readyEvent = CreateEvent(NULL, TRUE, FALSE, "ReadyEvent");
-    if (!readyEvent) {
-        std::cerr << "CreateEvent failed, err=" << GetLastError() << std::endl;
-        return 1;
-    }
+    if (!ExceptionHandler::checkHandle(readyEvent, "CreateEvent(ReadyEvent)")) return 1;
 
     HANDLE messageSemaphore = CreateSemaphore(NULL, 0, recordsNumber, "MessageSemaphore");
-    if (!messageSemaphore) {
-        std::cerr << "CreateSemaphore failed, err=" << GetLastError() << std::endl;
+    if (!ExceptionHandler::checkHandle(messageSemaphore, "CreateSemaphore(MessageSemaphore)")) {
         CloseHandle(readyEvent);
         return 1;
     }
 
     HANDLE binaryFileMutex = CreateMutex(NULL, FALSE, "BinaryFileMutex");
-    if (!binaryFileMutex) {
-        std::cerr << "CreateMutex failed, error: " << GetLastError() << std::endl;
+    if (!ExceptionHandler::checkHandle(binaryFileMutex, "CreateMutex(BinaryFileMutex)")) {
         CloseHandle(readyEvent);
         CloseHandle(messageSemaphore);
+        return 1;
+    }
+
+    HANDLE freeSlotsSemaphore = CreateSemaphore(NULL, recordsNumber, recordsNumber, "FreeSlotsSemaphore");
+    if (!ExceptionHandler::checkHandle(freeSlotsSemaphore, "CreateSemaphore(FreeSlotsSemaphore)")) {
+        CloseHandle(readyEvent);
+        CloseHandle(messageSemaphore);
+        CloseHandle(binaryFileMutex);
         return 1;
     }
 
@@ -70,6 +69,7 @@ int main(int argc, char* argv[]) {
             CloseHandle(readyEvent);
             CloseHandle(messageSemaphore);
             CloseHandle(binaryFileMutex);
+            CloseHandle(freeSlotsSemaphore);
             return 1;
         }
 
@@ -80,9 +80,7 @@ int main(int argc, char* argv[]) {
     SetEvent(readyEvent);
 
     int command;
-
     long readOffset = 0;
-
     std::cin.ignore(10000, '\n');
 
     while (true) {
@@ -91,8 +89,7 @@ int main(int argc, char* argv[]) {
                   << "2. Exit\n";
 
         if (!(std::cin >> command)) {
-            std::cin.clear();
-            std::cin.ignore(10000, '\n');
+            ExceptionHandler::clearInput();
             std::cout << "Wrong input!" << std::endl;
             continue;
         }
@@ -105,17 +102,14 @@ int main(int argc, char* argv[]) {
                     std::cout << "No messages yet." << std::endl;
                     break;
                 }
-                else if (waitResult != WAIT_OBJECT_0) {
-                    std::cerr << "Wait failed, err=" << GetLastError() << std::endl;
-                    break;
-                }
+                else if (!ExceptionHandler::checkWait(waitResult, "Wait MessageSemaphore")) break;
 
                 WaitForSingleObject(binaryFileMutex, INFINITE);
 
                 binaryFile = fopen(binaryFileName.c_str(), "rb");
-                if (!binaryFile) {
+                if (!ExceptionHandler::checkFile(binaryFile, "open input file")) {
                     ReleaseMutex(binaryFileMutex);
-                    std::cerr << "Failed to open input file" << std::endl;
+                    ReleaseSemaphore(messageSemaphore, 1, NULL);
                     break;
                 }
 
@@ -123,20 +117,25 @@ int main(int argc, char* argv[]) {
                     fclose(binaryFile);
                     ReleaseMutex(binaryFileMutex);
                     std::cerr << "fseek failed" << std::endl;
+                    ReleaseSemaphore(messageSemaphore, 1, NULL);
                     break;
                 }
+
                 Message message;
-                size_t read = fread(&message, sizeof(Message), 1, binaryFile);
+                size_t readCount = fread(&message, sizeof(Message), 1, binaryFile);
                 fclose(binaryFile);
 
-                if (read != 1) {
+                if (readCount != 1) {
                     ReleaseMutex(binaryFileMutex);
                     std::cerr << "fread failed" << std::endl;
+                    ReleaseSemaphore(messageSemaphore, 1, NULL);
                     break;
                 }
 
                 readOffset += (long)sizeof(Message);
                 ReleaseMutex(binaryFileMutex);
+
+                ReleaseSemaphore(freeSlotsSemaphore, 1, NULL);
 
                 std::cout << "Message received: " << message.text << std::endl;
                 break;
@@ -145,6 +144,7 @@ int main(int argc, char* argv[]) {
                 CloseHandle(readyEvent);
                 CloseHandle(messageSemaphore);
                 CloseHandle(binaryFileMutex);
+                CloseHandle(freeSlotsSemaphore);
                 std::cout << "Receiver exiting..." << std::endl;
                 return 0;
             default:

@@ -2,6 +2,7 @@
 #include <string>
 #include <windows.h>
 #include "Headers/Message.h"
+#include "Headers/ExceptionHandler.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -15,14 +16,15 @@ int main(int argc, char* argv[]) {
     std::string binaryFileName = argv[1];
 
     try {
-        HANDLE readyEvent = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "ReadyEvent");
-        HANDLE messageSemaphore = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, "MessageSemaphore");
-        HANDLE binaryFileMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, "BinaryFileMutex");
+        HANDLE readyEvent = OpenEvent(SYNCHRONIZE, FALSE, "ReadyEvent");
+        HANDLE messageSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, "MessageSemaphore");
+        HANDLE binaryFileMutex = OpenMutex(SYNCHRONIZE | MUTEX_MODIFY_STATE, FALSE, "BinaryFileMutex");
+        HANDLE freeSlotsSemaphore = OpenSemaphore(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE, "FreeSlotsSemaphore");
 
-        if (!readyEvent || !messageSemaphore || !binaryFileMutex) {
-            std::cerr << "Error opening synchronization objects" << std::endl;
-            return 1;
-        }
+        if (!ExceptionHandler::checkHandle(readyEvent, "OpenEvent(ReadyEvent)")) return 1;
+        if (!ExceptionHandler::checkHandle(messageSemaphore, "OpenSemaphore(MessageSemaphore)")) return 1;
+        if (!ExceptionHandler::checkHandle(binaryFileMutex, "OpenMutex(BinaryFileMutex)")) return 1;
+        if (!ExceptionHandler::checkHandle(freeSlotsSemaphore, "OpenSemaphore(FreeSlotsSemaphore)")) return 1;
 
         std::cout << "Waiting for Receiver to be ready..." << std::endl;
         WaitForSingleObject(readyEvent, INFINITE);
@@ -34,8 +36,7 @@ int main(int argc, char* argv[]) {
                       << "2. Exit\n";
 
             if (!(std::cin >> command)) {
-                std::cin.clear();
-                std::cin.ignore(10000, '\n');
+                ExceptionHandler::clearInput();
                 std::cout << "Wrong input!" << std::endl;
                 continue;
             }
@@ -47,18 +48,17 @@ int main(int argc, char* argv[]) {
                     std::cout << "Enter your message: " << std::endl;
 
                     std::cin.getline(message.text, sizeof(message.text));
+                    if (std::cin.fail()) ExceptionHandler::clearInput();
 
-                    if (std::cin.fail()) {
-                        std::cin.clear();
-                        std::cin.ignore(10000, '\n');
-                    }
+                    DWORD waitFree = WaitForSingleObject(freeSlotsSemaphore, INFINITE);
+                    if (!ExceptionHandler::checkWait(waitFree, "Wait FreeSlotsSemaphore")) break;
 
                     WaitForSingleObject(binaryFileMutex, INFINITE);
 
                     binaryFile = fopen(binaryFileName.c_str(), "ab");
-                    if (!binaryFile) {
+                    if (!ExceptionHandler::checkFile(binaryFile, "open output file")) {
                         ReleaseMutex(binaryFileMutex);
-                        std::cerr << "Failed to open output file\n";
+                        ReleaseSemaphore(freeSlotsSemaphore, 1, NULL);
                         break;
                     }
 
@@ -67,9 +67,8 @@ int main(int argc, char* argv[]) {
 
                     ReleaseMutex(binaryFileMutex);
 
-                    if (!ReleaseSemaphore(messageSemaphore, 1, NULL)) {
-                        std::cerr << "ReleaseSemaphore failed, err=" << GetLastError() << std::endl;
-                    }
+                    BOOL rel = ReleaseSemaphore(messageSemaphore, 1, NULL);
+                    ExceptionHandler::checkRelease(rel, "ReleaseSemaphore(MessageSemaphore)");
 
                     std::cout << "Message sent" << std::endl;
                     break;
@@ -83,10 +82,8 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    catch (const std::exception& ex) {
-        std::cerr << "Sender error: " << ex.what() << "\n";
-        std::cerr << "Press any key to close this window...";
-        system("pause");
+    catch (...) {
+        std::cerr << "Sender unexpected error\n";
         return 1;
     }
 }
