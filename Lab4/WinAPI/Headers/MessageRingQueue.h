@@ -1,6 +1,7 @@
 #ifndef LAB4_WINAPI_MESSAGERINGQUEUE_H
 #define LAB4_WINAPI_MESSAGERINGQUEUE_H
 
+#include <string>
 #include "Message.h"
 
 class MessageRingQueue {

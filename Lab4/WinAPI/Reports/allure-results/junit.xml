@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\Users\Alexander\Documents\OS\Lab4\WinAPI\cmake-build-debug\lab4_tests" errors="0" failures="0" tests="22" time="0.017141" timestamp="2025-11-04T09:26:43Z" doctest_version="2.4.11">
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkHandle returns true for non-null/non-invalid" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkHandle returns false for INVALID_HANDLE_VALUE" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkWait returns true for WAIT_OBJECT_0" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkWait returns true for WAIT_TIMEOUT" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkWait returns false for other code" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkRelease true when BOOL TRUE" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkRelease false when BOOL FALSE" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkFile true when FILE* valid" time="0.000583" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="checkFile false when FILE* null" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ExceptionHandlerTests.cpp" name="clearInput clears failbit without blocking" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageRingQueueTests.cpp" name="MessageRingQueue ctor + add/read basic roundtrip" time="0.003501" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageRingQueueTests.cpp" name="MessageRingQueue wrap-around works on small capacity" time="0.004024" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageRingQueueTests.cpp" name="MessageRingQueue second read returns second enqueued" time="0.006741" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageTests.cpp" name="Message default ctor sets first byte to zero" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageTests.cpp" name="Message default ctor sets last byte to zero" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageTests.cpp" name="Message(char[20]) copies first char" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/MessageTests.cpp" name="Message(char[20]) copies 20th char" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ReceiverTests.cpp" name="Receiver-style CreateEvent manual reset succeeds" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ReceiverTests.cpp" name="Receiver-style message semaphore increments and decrements" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/ReceiverTests.cpp" name="Receiver-style free slots semaphore blocks after zero" time="0" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/SenderTests.cpp" name="Sender returns non-zero when launched without args" time="0.002292" status="run"/>
+    <testcase classname="C:/Users/Alexander/Documents/OS/Lab4/WinAPI/Tests/SenderTests.cpp" name="Sender-like open of missing sync object fails (handle check)" time="0" status="run"/>
+  </testsuite>
+</testsuites>

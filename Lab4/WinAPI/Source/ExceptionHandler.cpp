@@ -1,8 +1,9 @@
+#include <limits>
 #include "../Headers/ExceptionHandler.h"
 
 bool ExceptionHandler::checkHandle(HANDLE h, const std::string& what) {
     if (h != NULL && h != INVALID_HANDLE_VALUE) return true;
-    std::cerr << what << " failed, err=" << GetLastError() << std::endl;
+    std::cerr << what << " failed, error: " << GetLastError() << std::endl;
     return false;
 }
 
@@ -27,5 +28,8 @@ bool ExceptionHandler::checkFile(FILE* f, const std::string& what) {
 
 void ExceptionHandler::clearInput() {
     std::cin.clear();
-    std::cin.ignore(10000, '\n');
+    std::streambuf* rb = std::cin.rdbuf();
+    if (rb && rb->in_avail() > 0) {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
 }
