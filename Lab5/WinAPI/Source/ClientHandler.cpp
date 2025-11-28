@@ -1,12 +1,10 @@
 #include "../Headers/ClientHandler.h"
 #include "../Headers/ExceptionHandler.h"
 #include <iostream>
-#include <limits>
 #include <cstring>
 #include <string>
 
-ClientHandler::ClientHandler(PipeClient* pipeClientValue) : pipeClient(pipeClientValue) {
-}
+ClientHandler::ClientHandler(PipeClient* pipeClientValue) : pipeClient(pipeClientValue) {}
 
 int ClientHandler::readEmployeeIdFromConsole() {
     int employeeId;
@@ -25,16 +23,14 @@ void ClientHandler::handleModifyCommand() {
     request.type = PIPE_REQUEST_BEGIN_MODIFY;
     request.employeeId = employeeId;
 
-    bool sent = pipeClient->sendRequest(request);
-    if (!sent) {
-        std::cout << "Failed to send request to server" << std::endl;
+    if (!pipeClient->sendRequest(request)) {
+        ExceptionHandler::printError("Failed to send modify request to server");
         return;
     }
 
     PipeResponse response;
-    bool received = pipeClient->receiveResponse(response);
-    if (!received) {
-        std::cout << "Failed to receive response from server" << std::endl;
+    if (!pipeClient->receiveResponse(response)) {
+        ExceptionHandler::printError("Failed to receive modify response from server");
         return;
     }
 
@@ -52,9 +48,7 @@ void ClientHandler::handleModifyCommand() {
     }
 
     std::cout << "Current record:" << std::endl;
-    std::cout << "num = " << response.employeeData.num
-              << ", name = " << response.employeeData.name
-              << ", hours = " << response.employeeData.hours << std::endl;
+    response.employeeData.printInfo();
 
     employee updatedEmployee = response.employeeData;
 
@@ -94,12 +88,14 @@ void ClientHandler::handleModifyCommand() {
         commitRequest.employeeId = employeeId;
         commitRequest.employeeData = updatedEmployee;
 
-        bool commitSent = pipeClient->sendRequest(commitRequest);
-        if (!commitSent) std::cout << "Failed to send commit request" << std::endl;
+        if (!pipeClient->sendRequest(commitRequest)) {
+            ExceptionHandler::printError("Failed to send commit request");
+        }
         else {
             PipeResponse commitResponse;
-            bool commitReceived = pipeClient->receiveResponse(commitResponse);
-            if (!commitReceived) std::cout << "Failed to receive commit response" << std::endl;
+            if (!pipeClient->receiveResponse(commitResponse)) {
+                ExceptionHandler::printError("Failed to receive commit response");
+            }
             else if (commitResponse.status != PIPE_RESPONSE_OK) std::cout << "Commit failed" << std::endl;
             else std::cout << "Record updated" << std::endl;
         }
@@ -117,16 +113,14 @@ void ClientHandler::handleModifyCommand() {
     endRequest.type = PIPE_REQUEST_END_ACCESS;
     endRequest.employeeId = employeeId;
 
-    bool endSent = pipeClient->sendRequest(endRequest);
-    if (!endSent) {
-        std::cout << "Failed to send end access request" << std::endl;
+    if (!pipeClient->sendRequest(endRequest)) {
+        ExceptionHandler::printError("Failed to send end access request");
         return;
     }
 
     PipeResponse endResponse;
-    bool endReceived = pipeClient->receiveResponse(endResponse);
-    if (!endReceived) {
-        std::cout << "Failed to receive end access response" << std::endl;
+    if (!pipeClient->receiveResponse(endResponse)) {
+        ExceptionHandler::printError("Failed to receive end access response");
         return;
     }
 
@@ -141,16 +135,14 @@ void ClientHandler::handleReadCommand() {
     request.type = PIPE_REQUEST_READ;
     request.employeeId = employeeId;
 
-    bool sent = pipeClient->sendRequest(request);
-    if (!sent) {
-        std::cout << "Failed to send request to server" << std::endl;
+    if (!pipeClient->sendRequest(request)) {
+        ExceptionHandler::printError("Failed to send read request to server");
         return;
     }
 
     PipeResponse response;
-    bool received = pipeClient->receiveResponse(response);
-    if (!received) {
-        std::cout << "Failed to receive response from server" << std::endl;
+    if (!pipeClient->receiveResponse(response)) {
+        ExceptionHandler::printError("Failed to receive read response from server");
         return;
     }
 
@@ -168,9 +160,7 @@ void ClientHandler::handleReadCommand() {
     }
 
     std::cout << "Employee record:" << std::endl;
-    std::cout << "num = " << response.employeeData.num
-              << ", name = " << response.employeeData.name
-              << ", hours = " << response.employeeData.hours << std::endl;
+    response.employeeData.printInfo();
 
     std::cout << "Enter any number to finish access to this employee" << std::endl;
     int finishAccessCommand;
@@ -183,16 +173,14 @@ void ClientHandler::handleReadCommand() {
     endRequest.type = PIPE_REQUEST_END_ACCESS;
     endRequest.employeeId = employeeId;
 
-    bool endSent = pipeClient->sendRequest(endRequest);
-    if (!endSent) {
-        std::cout << "Failed to send end access request" << std::endl;
+    if (!pipeClient->sendRequest(endRequest)) {
+        ExceptionHandler::printError("Failed to send end access request");
         return;
     }
 
     PipeResponse endResponse;
-    bool endReceived = pipeClient->receiveResponse(endResponse);
-    if (!endReceived) {
-        std::cout << "Failed to receive end access response" << std::endl;
+    if (!pipeClient->receiveResponse(endResponse)) {
+        ExceptionHandler::printError("Failed to receive end access response");
         return;
     }
 
@@ -205,9 +193,8 @@ void ClientHandler::handleShutdownCommand() {
     request.type = PIPE_REQUEST_SHUTDOWN;
     request.employeeId = 0;
 
-    bool sent = pipeClient->sendRequest(request);
-    if (!sent) {
-        std::cout << "Failed to send shutdown request" << std::endl;
+    if (!pipeClient->sendRequest(request)) {
+        ExceptionHandler::printError("Failed to send shutdown request");
         return;
     }
 

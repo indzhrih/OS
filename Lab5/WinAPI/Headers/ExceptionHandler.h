@@ -11,6 +11,7 @@ public:
     static bool checkWait(DWORD code, const std::string& what);
     static bool checkRelease(BOOL ok, const std::string& what);
     static bool checkFile(FILE* file, const std::string& what);
+    static void printError(const std::string& message);
     static void clearInput();
 };
 

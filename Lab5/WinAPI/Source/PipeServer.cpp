@@ -1,6 +1,5 @@
 #include "../Headers/PipeServer.h"
 #include "../Headers/ExceptionHandler.h"
-#include <iostream>
 
 PipeServer::PipeServer(const std::string& pipeNameValue)
     : pipeName(pipeNameValue), pipeHandle(INVALID_HANDLE_VALUE) {
@@ -14,16 +13,14 @@ PipeServer::~PipeServer() {
 }
 
 bool PipeServer::createPipe() {
-    std::string fullName = "\\\\.\\pipe\\" + pipeName;
+    std::string pipePath = std::string(R"(\\.\pipe\)") + pipeName;
     DWORD bufferSize = 1024;
 
-    pipeHandle = CreateNamedPipeA(fullName.c_str(), PIPE_ACCESS_DUPLEX,
-                                  PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-                                  1, bufferSize, bufferSize, 0, NULL);
+    pipeHandle = CreateNamedPipeA( pipePath.c_str(), PIPE_ACCESS_DUPLEX,
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+        1, bufferSize, bufferSize, 0, NULL);
 
-    if (!ExceptionHandler::checkHandle(pipeHandle, "CreateNamedPipe")) return false;
-
-    return true;
+    return ExceptionHandler::checkHandle(pipeHandle, "CreateNamedPipe");
 }
 
 bool PipeServer::waitForClient() {
@@ -33,7 +30,7 @@ bool PipeServer::waitForClient() {
     if (!connected) {
         DWORD errorCode = GetLastError();
         if (errorCode != ERROR_PIPE_CONNECTED) {
-            std::cerr << "ConnectNamedPipe failed, error: " << errorCode << std::endl;
+            ExceptionHandler::printError("ConnectNamedPipe failed, error: " + std::to_string(errorCode));
             return false;
         }
     }
@@ -47,7 +44,7 @@ bool PipeServer::readRequest(PipeRequest& request) {
     DWORD bytesRead = 0;
     BOOL readOk = ReadFile(pipeHandle, &request, sizeof(PipeRequest), &bytesRead, NULL);
     if (!readOk || bytesRead != sizeof(PipeRequest)) {
-        std::cerr << "ReadFile from pipe failed, error: " << GetLastError() << std::endl;
+        ExceptionHandler::printError("ReadFile from pipe failed, error: " + std::to_string(GetLastError()));
         return false;
     }
 
@@ -60,7 +57,7 @@ bool PipeServer::writeResponse(const PipeResponse& response) {
     DWORD bytesWritten = 0;
     BOOL writeOk = WriteFile(pipeHandle, &response, sizeof(PipeResponse), &bytesWritten, NULL);
     if (!writeOk || bytesWritten != sizeof(PipeResponse)) {
-        std::cerr << "WriteFile to pipe failed, error: " << GetLastError() << std::endl;
+        ExceptionHandler::printError("WriteFile to pipe failed, error: " + std::to_string(GetLastError()));
         return false;
     }
 
@@ -69,7 +66,6 @@ bool PipeServer::writeResponse(const PipeResponse& response) {
 
 void PipeServer::disconnect() {
     if (pipeHandle == INVALID_HANDLE_VALUE) return;
-
     FlushFileBuffers(pipeHandle);
     DisconnectNamedPipe(pipeHandle);
 }

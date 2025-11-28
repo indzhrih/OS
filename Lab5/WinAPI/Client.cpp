@@ -8,14 +8,12 @@
 int main(int argc, char* argv[]) {
     try {
         std::string pipeName = "EmployeePipe_1";
-        if (argc > 1) {
-            pipeName = argv[1];
-        }
+        if (argc > 1) pipeName = argv[1];
 
         PipeClient pipeClient(pipeName);
         bool connected = pipeClient.connectToServer();
         if (!connected) {
-            std::cerr << "Failed to connect to server" << std::endl;
+            ExceptionHandler::printError("Failed to connect to server");
             std::cout << "Press any key to exit" << std::endl;
             system("pause");
             return 1;
@@ -31,13 +29,13 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     catch (const std::exception& exception) {
-        std::cerr << "Client error: " << exception.what() << std::endl;
+        ExceptionHandler::printError("Client error: " + std::string(exception.what()));
         std::cout << "Press any key to exit" << std::endl;
         system("pause");
         return 1;
     }
     catch (...) {
-        std::cerr << "Client unknown error" << std::endl;
+        ExceptionHandler::printError("Client unknown error");
         std::cout << "Press any key to exit" << std::endl;
         system("pause");
         return 1;

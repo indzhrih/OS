@@ -11,7 +11,7 @@ add_executable(Server
         Headers/PipeResponseStatus.h
         Headers/PipeRequest.h
         Headers/PipeResponse.h
-        Headers/EmployeeFile.h
+        Headers/EmployeeStorage.h
         Headers/PipeServer.h
         Headers/ProcessHandler.h
         Headers/ExceptionHandler.h
@@ -22,7 +22,7 @@ add_executable(Server
         Source/PipeResponseStatus.cpp
         Source/PipeRequest.cpp
         Source/PipeResponse.cpp
-        Source/EmployeeFile.cpp
+        Source/EmployeeStorage.cpp
         Source/PipeServer.cpp
         Source/ProcessHandler.cpp
         Source/ExceptionHandler.cpp

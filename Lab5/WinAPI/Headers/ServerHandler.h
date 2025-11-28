@@ -3,17 +3,17 @@
 
 #include <windows.h>
 #include "PipeServer.h"
-#include "EmployeeFile.h"
+#include "EmployeeStorage.h"
 #include "RecordLockManager.h"
 
 class ServerHandler {
 public:
-    ServerHandler(EmployeeFile* employeeFileValue, PipeServer* pipeServerValue, RecordLockManager* recordLockManagerValue);
+    ServerHandler(EmployeeStorage* employeeStorageValue, PipeServer* pipeServerValue, RecordLockManager* recordLockManagerValue);
 
     void run();
 
 private:
-    EmployeeFile* employeeFile;
+    EmployeeStorage* employeeStorage;
     PipeServer* pipeServer;
     RecordLockManager* recordLockManager;
     bool isRunning;

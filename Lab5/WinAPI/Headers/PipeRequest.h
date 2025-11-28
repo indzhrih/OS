@@ -4,12 +4,13 @@
 #include "PipeRequestType.h"
 #include "Employee.h"
 
-struct PipeRequest {
+class PipeRequest {
+public:
+    PipeRequest();
+
     PipeRequestType type;
     int employeeId;
     employee employeeData;
-
-    PipeRequest();
 };
 
 #endif

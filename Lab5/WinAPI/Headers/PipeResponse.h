@@ -4,11 +4,12 @@
 #include "PipeResponseStatus.h"
 #include "Employee.h"
 
-struct PipeResponse {
+class PipeResponse {
+public:
+    PipeResponse();
+
     PipeResponseStatus status;
     employee employeeData;
-
-    PipeResponse();
 };
 
 #endif

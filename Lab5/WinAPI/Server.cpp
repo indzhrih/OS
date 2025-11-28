@@ -2,7 +2,7 @@
 #include <string>
 #include <stdexcept>
 #include <windows.h>
-#include "Headers/EmployeeFile.h"
+#include "Headers/EmployeeStorage.h"
 #include "Headers/PipeServer.h"
 #include "Headers/ProcessHandler.h"
 #include "Headers/ServerHandler.h"
@@ -15,9 +15,9 @@ int main() {
         std::cout << "Enter binary file name" << std::endl;
         std::getline(std::cin >> std::ws, binaryFileName);
 
-        EmployeeFile employeeFile(binaryFileName);
-        employeeFile.createFromConsole();
-        employeeFile.printAll();
+        EmployeeStorage employeeStorage(binaryFileName);
+        employeeStorage.createFromConsole();
+        employeeStorage.printAll();
 
         int clientsCount;
         std::cout << "Enter number of clients" << std::endl;
@@ -27,7 +27,7 @@ int main() {
         }
 
         if (clientsCount > MAXIMUM_WAIT_OBJECTS) {
-            std::cerr << "Too many clients. Maximum allowed is " << MAXIMUM_WAIT_OBJECTS << std::endl;
+            ExceptionHandler::printError("Too many clients. Maximum allowed is " + std::to_string(MAXIMUM_WAIT_OBJECTS));
             std::cout << "Press any key to exit" << std::endl;
             system("pause");
             return 1;
@@ -51,16 +51,14 @@ int main() {
         for (int i = 0; i < clientsCount; ++i) {
             pipeNames[i] = "EmployeePipe_" + std::to_string(i + 1);
             pipeServers[i] = new PipeServer(pipeNames[i]);
-            bool created = pipeServers[i]->createPipe();
-            if (!created) {
-                std::cerr << "Cannot create pipe " << pipeNames[i] << std::endl;
+            if (!pipeServers[i]->createPipe()) {
+                ExceptionHandler::printError("Cannot create pipe " + pipeNames[i]);
                 throw std::runtime_error("CreateNamedPipe failed");
             }
         }
 
         for (int i = 0; i < clientsCount; ++i) {
-            serverHandlers[i] = new ServerHandler(&employeeFile, pipeServers[i], &recordLockManager);
-
+            serverHandlers[i] = new ServerHandler(&employeeStorage, pipeServers[i], &recordLockManager);
             serverThreads[i] = CreateThread(NULL, 0, ServerHandlerThread, serverHandlers[i], 0, NULL);
             if (serverThreads[i] == NULL) {
                 DWORD errorCode = GetLastError();
@@ -80,24 +78,18 @@ int main() {
         }
 
         for (int i = 0; i < clientsCount; ++i) {
-            if (clientProcesses[i] != NULL) {
-                clientProcesses[i]->waitForProcess();
-            }
+            if (clientProcesses[i] != NULL) clientProcesses[i]->waitForProcess();
         }
 
         for (int i = 0; i < clientsCount; ++i) {
-            if (pipeServers[i] != NULL) {
-                pipeServers[i]->disconnect();
-            }
+            if (pipeServers[i] != NULL) pipeServers[i]->disconnect();
         }
 
         std::cout << "Final file content" << std::endl;
-        employeeFile.printAll();
+        employeeStorage.printAll();
 
         for (int i = 0; i < clientsCount; ++i) {
-            if (serverThreads[i] != NULL) {
-                CloseHandle(serverThreads[i]);
-            }
+            if (serverThreads[i] != NULL) CloseHandle(serverThreads[i]);
             delete serverHandlers[i];
             delete pipeServers[i];
             delete clientProcesses[i];
@@ -113,13 +105,15 @@ int main() {
         system("pause");
 
         return 0;
-    } catch (const std::exception& exception) {
-        std::cerr << "Server error: " << exception.what() << std::endl;
+    }
+    catch (const std::exception& exception) {
+        ExceptionHandler::printError("Server error: " + std::string(exception.what()));
         std::cout << "Press any key to exit" << std::endl;
         system("pause");
         return 1;
-    } catch (...) {
-        std::cerr << "Server unknown error" << std::endl;
+    }
+    catch (...) {
+        ExceptionHandler::printError("Server unknown error");
         std::cout << "Press any key to exit" << std::endl;
         system("pause");
         return 1;

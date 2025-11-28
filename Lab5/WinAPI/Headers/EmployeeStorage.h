@@ -1,12 +1,12 @@
-#ifndef LAB5_EMPLOYEEFILE_H
-#define LAB5_EMPLOYEEFILE_H
+#ifndef LAB5_EMPLOYEESTORAGE_H
+#define LAB5_EMPLOYEESTORAGE_H
 
 #include <string>
 #include "Employee.h"
 
-class EmployeeFile {
+class EmployeeStorage {
 public:
-    EmployeeFile(const std::string& filePath);
+    EmployeeStorage(const std::string& filePathValue);
 
     void createFromConsole();
     void printAll() const;

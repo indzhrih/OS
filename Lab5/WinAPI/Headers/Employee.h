@@ -7,6 +7,7 @@ struct employee {
     double hours;
 
     employee();
+    void printInfo() const;
 };
 
 #endif
