@@ -113,9 +113,7 @@ bool EmployeeStorage::readEmployee(int employeeId, employee& result) const {
 
 bool EmployeeStorage::writeEmployee(int employeeId, const employee& updatedEmployee) const {
     FILE* file = std::fopen(filePath.c_str(), "rb+");
-    if (!ExceptionHandler::checkFile(file, "Open file for writeEmployee")) {
-        throw std::runtime_error("Cannot open file " + filePath);
-    }
+    if (!ExceptionHandler::checkFile(file, "Open file for writeEmployee")) throw std::runtime_error("Cannot open file " + filePath);
 
     employee record;
     bool updated = false;
