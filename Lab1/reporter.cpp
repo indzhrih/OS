@@ -7,7 +7,6 @@
 int main(int argc, char* argv[]) {
     bool isTestMode = false;
 
-    // Проверяем, есть ли флаг --test-mode
     for (int i = 1; i < argc; i++) {
         if (std::string(argv[i]) == "--test-mode") {
             isTestMode = true;
