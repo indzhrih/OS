@@ -1,7 +1,5 @@
-.vs/
-x64/
-x86/
-*.sln
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
+.idea/
+cmake-build-*/
+build*/
+Lab1/tests/input_data/
+Reports*/
