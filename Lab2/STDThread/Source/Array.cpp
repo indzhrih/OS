@@ -1,6 +1,7 @@
 #include <iostream>
+#include <string>
+#include <stdexcept>
 #include <thread>
-#include <chrono>
 #include "../Headers/Array.h"
 
 Array::Array() {

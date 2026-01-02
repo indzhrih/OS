@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <stdexcept>
 #include <windows.h>
 #include "../Headers/Array.h"
 

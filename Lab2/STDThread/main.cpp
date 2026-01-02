@@ -24,6 +24,8 @@ int main() {
         threadHandler.createThread(std::string("min_max"), array);
         threadHandler.createThread(std::string("average"), array);
 
+        threadHandler.waitForThreads();
+
         array.switchMaxAndMinOnAverage();
         array.printArray();
         return 0;

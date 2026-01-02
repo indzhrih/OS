@@ -24,6 +24,7 @@ add_executable(tests
         Tests/ArrayTests.cpp
         Tests/ThreadHandlerTests.cpp
         Tests/MainTests.cpp
+        Tests/TestFixtures.cpp
         Source/Array.cpp
         Source/ThreadHandler.cpp
 )
