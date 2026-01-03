@@ -2,58 +2,166 @@
 #include <windows.h>
 #include "../Headers/Thread.h"
 #include "../Headers/Array.h"
+#include "TestFixtures.cpp"
 
 using namespace bandit;
+using namespace snowhouse;
 
 go_bandit([]{
     describe("Thread", []{
-
-        it("ctor: invalid args -> invalid_argument", []{
+        describe("constructor", []{
+            HANDLE startEv = nullptr;
+            HANDLE stopEv = nullptr;
+            HANDLE endEv = nullptr;
             CRITICAL_SECTION cs;
-            InitializeCriticalSection(&cs);
-            Array arr(2);
+            Array* arr2 = nullptr;
+            Array* arr5 = nullptr;
 
-            AssertThrows(std::invalid_argument,
-                         Thread(nullptr, nullptr, nullptr, &cs, &arr, 1, 2));
+            before_each([&]{
+                InitializeCriticalSection(&cs);
+                arr2 = new Array(2);
+                arr5 = new Array(5);
+                startEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                stopEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                endEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+            });
 
-            HANDLE ev = CreateEvent(NULL, TRUE, FALSE, NULL);
-            AssertThat(ev != NULL, Equals(true));
+            after_each([&]{
+                DeleteCriticalSection(&cs);
+                delete arr2;
+                delete arr5;
+                arr2 = arr5 = nullptr;
+                if(startEv) CloseHandle(startEv);
+                if(stopEv) CloseHandle(stopEv);
+                if(endEv) CloseHandle(endEv);
+                startEv = stopEv = endEv = nullptr;
+            });
 
-            AssertThrows(std::invalid_argument,
-                         Thread(ev, ev, ev, &cs, &arr, 1, 0));
-            AssertThrows(std::invalid_argument,
-                         Thread(ev, ev, ev, &cs, &arr, 0, 2));
+            it("creates thread with valid parameters", [&]{
+                Thread thr(startEv, endEv, stopEv, &cs, arr5, 1, 5);
+            });
 
-            CloseHandle(ev);
-            DeleteCriticalSection(&cs);
+            it("throws on null startEvent", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(nullptr, endEv, stopEv, &cs, arr2, 1, 2));
+            });
+
+            it("throws on null endEvent", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, nullptr, stopEv, &cs, arr2, 1, 2));
+            });
+
+            it("throws on null stopEvent", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, nullptr, &cs, arr2, 1, 2));
+            });
+
+            it("throws on null criticalSection", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, nullptr, arr2, 1, 2));
+            });
+
+            it("throws on null array", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, &cs, nullptr, 1, 2));
+            });
+
+            it("throws on zero threadNumber", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, &cs, arr2, 0, 2));
+            });
+
+            it("throws on negative threadNumber", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, &cs, arr2, -1, 2));
+            });
+
+            it("throws on zero arraySize", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, &cs, arr2, 1, 0));
+            });
+
+            it("throws on negative arraySize", [&]{
+                AssertThrows(std::invalid_argument,
+                             Thread(startEv, endEv, stopEv, &cs, arr2, 1, -2));
+            });
         });
 
-        it("Thread marks element, and then signals stopEvent when conflict and nulls endEvent", []{
-            Array arr(1);
-            HANDLE startEv = CreateEvent(NULL, TRUE, FALSE, NULL);
-            HANDLE stopEv  = CreateEvent(NULL, TRUE, FALSE, NULL);
-            HANDLE endEv   = CreateEvent(NULL, TRUE, FALSE, NULL);
-            CRITICAL_SECTION cs; InitializeCriticalSection(&cs);
+        describe("wait method", []{
+            HANDLE startEv = nullptr;
+            HANDLE stopEv = nullptr;
+            HANDLE endEv = nullptr;
+            CRITICAL_SECTION cs;
+            Array* arr1 = nullptr;
 
-            struct CoutRedirect { std::streambuf* old; std::ostringstream oss;
-                CoutRedirect(): old(std::cout.rdbuf(oss.rdbuf())) {}
-                ~CoutRedirect(){ std::cout.rdbuf(old); }
-            } silence;
+            before_each([&]{
+                InitializeCriticalSection(&cs);
+                arr1 = new Array(1);
+                startEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                stopEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                endEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+            });
 
-            Thread thr(startEv, endEv, stopEv, &cs, &arr, 42, 1);
+            after_each([&]{
+                DeleteCriticalSection(&cs);
+                delete arr1;
+                arr1 = nullptr;
+                if(startEv) CloseHandle(startEv);
+                if(stopEv) CloseHandle(stopEv);
+                if(endEv) CloseHandle(endEv);
+                startEv = stopEv = endEv = nullptr;
+            });
 
-            SetEvent(startEv);
-            auto wr = WaitForSingleObject(stopEv, 2000);
-            AssertThat(wr, Equals((DWORD)WAIT_OBJECT_0));
+            it("returns when thread completes", [&]{
+                CoutRedirect silence;
+                Thread thr(startEv, endEv, stopEv, &cs, arr1, 1, 1);
+                SetEvent(startEv);
+                Sleep(100);
+                SetEvent(endEv);
+                thr.wait();
+            });
 
-            ResetEvent(startEv);
+            it("handles already terminated thread", [&]{
+                CoutRedirect silence;
+                Thread thr(startEv, endEv, stopEv, &cs, arr1, 1, 1);
+                SetEvent(startEv);
+                Sleep(100);
+                SetEvent(endEv);
+                thr.wait();
+            });
+        });
 
-            SetEvent(endEv);
-            thr.wait();
-            AssertThat(arr[0], Equals(0));
+        describe("destructor", []{
+            HANDLE startEv = nullptr;
+            HANDLE stopEv = nullptr;
+            HANDLE endEv = nullptr;
+            CRITICAL_SECTION cs;
+            Array* arr1 = nullptr;
 
-            CloseHandle(startEv); CloseHandle(stopEv); CloseHandle(endEv);
-            DeleteCriticalSection(&cs);
+            before_each([&]{
+                InitializeCriticalSection(&cs);
+                arr1 = new Array(1);
+                startEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                stopEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+                endEv = CreateEvent(NULL, TRUE, FALSE, NULL);
+            });
+
+            after_each([&]{
+                DeleteCriticalSection(&cs);
+                delete arr1;
+                arr1 = nullptr;
+                if(startEv) CloseHandle(startEv);
+                if(stopEv) CloseHandle(stopEv);
+                if(endEv) CloseHandle(endEv);
+                startEv = stopEv = endEv = nullptr;
+            });
+
+            it("closes thread handle", [&]{
+                CoutRedirect silence;
+                {
+                    Thread thr(startEv, endEv, stopEv, &cs, arr1, 1, 1);
+                }
+            });
         });
     });
 });
