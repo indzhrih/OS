@@ -31,6 +31,7 @@ add_executable(tests
         Tests/ThreadTests.cpp
         Tests/ThreadHandlerTests.cpp
         Tests/MainTests.cpp
+        Tests/TestFixtures.cpp
         Source/Array.cpp
         Source/Thread.cpp
         Source/ThreadHandler.cpp)
