@@ -1,5 +1,4 @@
 #include "../Headers/Thread.h"
-#include "../Headers/ThreadHandler.h"
 #include <stdexcept>
 
 Thread::Thread(Event* startEvent, Event* endEvent, Event* stopEvent, std::mutex* criticalSection,

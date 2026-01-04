@@ -1,10 +1,7 @@
 #include <iostream>
 #include <limits>
-#include <stdexcept>
 #include <mutex>
-#include <thread>
-#include <chrono>
-
+#include <string>
 #include "Headers/Array.h"
 #include "Headers/Thread.h"
 #include "Headers/Event.h"

@@ -1,4 +1,5 @@
 #include "../Headers/Thread.h"
+#include <string>
 #include <stdexcept>
 
 Thread::Thread(HANDLE startEvent, HANDLE endEvent, HANDLE stopEvent, CRITICAL_SECTION* criticalSection,

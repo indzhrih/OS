@@ -1,4 +1,5 @@
 #include <bandit/bandit.h>
+#define NOMINMAX
 #include <windows.h>
 #include "../Headers/Thread.h"
 #include "../Headers/Array.h"

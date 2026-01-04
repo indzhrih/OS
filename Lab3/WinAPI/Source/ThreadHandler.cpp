@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include "../Headers/ThreadHandler.h"
 #include "../Headers/Thread.h"
 

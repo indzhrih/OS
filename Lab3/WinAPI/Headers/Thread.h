@@ -1,6 +1,14 @@
 #ifndef LAB3_WINAPI_THREAD_H
 #define LAB3_WINAPI_THREAD_H
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <windows.h>
 #include "Array.h"
 
@@ -35,4 +43,4 @@ private:
     DWORD threadId;
 };
 
-#endif // LAB3_WINAPI_THREAD_H
+#endif

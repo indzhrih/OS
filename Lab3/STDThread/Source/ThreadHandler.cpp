@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <thread>
 #include <chrono>
+#include <string>
 #include "../Headers/ThreadHandler.h"
 #include "../Headers/Thread.h"
 #include "../Headers/Event.h"

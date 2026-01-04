@@ -1,5 +1,14 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <iostream>
 #include <limits>
+#include <string>
 #include <stdexcept>
 #include <windows.h>
 #include "Headers/Array.h"

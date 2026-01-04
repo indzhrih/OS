@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.14)
 project(Lab3_WinAPI)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(Lab3_WinAPI
@@ -9,34 +9,41 @@ add_executable(Lab3_WinAPI
         Headers/Array.h Headers/Thread.h Headers/ThreadHandler.h
         Source/Array.cpp Source/Thread.cpp Source/ThreadHandler.cpp)
 
+target_include_directories(Lab3_WinAPI PRIVATE ${CMAKE_SOURCE_DIR}/Headers)
+
 include(FetchContent)
 
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
-FetchContent_Declare(
-        bandit
+FetchContent_Declare(bandit
         GIT_REPOSITORY https://github.com/banditcpp/bandit.git
-        GIT_TAG v2.0.0
+        GIT_TAG f297efd8aecc6e9ce8f84e33264898bf77f9cb73
 )
 
-FetchContent_GetProperties(bandit)
-if(NOT bandit_POPULATED)
-    FetchContent_Populate(bandit)
-endif()
+FetchContent_Declare(snowhouse
+        GIT_REPOSITORY https://github.com/banditcpp/snowhouse.git
+        GIT_TAG 8db10c8
+)
+
+FetchContent_Populate(bandit)
+FetchContent_Populate(snowhouse)
+
+add_library(bandit_headers INTERFACE)
+target_include_directories(bandit_headers INTERFACE
+        ${bandit_SOURCE_DIR}
+        ${snowhouse_SOURCE_DIR}/include
+)
 
 add_executable(tests
+        Tests/MainTests.cpp
         Tests/ArrayTests.cpp
         Tests/ThreadTests.cpp
         Tests/ThreadHandlerTests.cpp
-        Tests/MainTests.cpp
-        Tests/TestFixtures.cpp
         Source/Array.cpp
         Source/Thread.cpp
-        Source/ThreadHandler.cpp)
+        Source/ThreadHandler.cpp
+)
 
-target_include_directories(tests PRIVATE ${bandit_SOURCE_DIR})
+target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/Headers)
+target_link_libraries(tests PRIVATE bandit_headers)
 
 include(CTest)
 enable_testing()
@@ -64,3 +71,4 @@ if (ALLURE_BIN)
             COMMENT "Generating Allure report"
     )
 endif()
+
