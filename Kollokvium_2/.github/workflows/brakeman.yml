@@ -1,0 +1,23 @@
+name: Brakeman-vulnerabilities-check
+
+on:
+  workflow_call:
+
+jobs:
+  Brakeman-vulnerabilities-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.4'
+          bundler-cache: true
+
+      - name: Install Brakeman
+        run: gem install brakeman
+
+      - name: Brakeman
+        run: brakeman --format github --no-pager --exit-on-warn

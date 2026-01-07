@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - kollokvium_2
+  workflow_dispatch:
+
+jobs:
+  Rubocop-Code-Style-Check:
+    uses: ./.github/workflows/rubocop.yml
+
+  Brakeman-Vulnerabilities-Check:
+    needs: [Rubocop-Code-Style-Check]
+    uses: ./.github/workflows/brakeman.yml
+
+  RSpec-Tests:
+    needs: [Brakeman-Vulnerabilities-Check]
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit

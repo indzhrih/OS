@@ -1,0 +1,54 @@
+name: RSpec-Tests
+
+on:
+  workflow_call:
+    secrets:
+      PG_USER: { required: true }
+      PG_PASSWORD: { required: true }
+      PG_DB: { required: true }
+      DATABASE_URL: { required: true }
+
+jobs:
+  RSpec-Tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+
+        env:
+          POSTGRES_USER: ${{ secrets.PG_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.PG_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.PG_DB }}
+
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval=20s 
+          --health-timeout=15s 
+          --health-retries=15
+        ports: [ '5432:5432' ]
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.4'
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bundle exec rails db:prepare
+
+      - name: Run tests
+        run: bundle exec rspec
+
+      - name: Upload coverage report html as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-html
+          path: coverage/
