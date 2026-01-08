@@ -1,14 +1,6 @@
 #include "doctest/doctest.h"
 #include "../Headers/ExceptionHandler.h"
-#include <sstream>
-#include <cstdio>
-
-struct SilenceCerr {
-    std::streambuf* old{};
-    std::ostringstream sink;
-    SilenceCerr()  { old = std::cerr.rdbuf(sink.rdbuf()); }
-    ~SilenceCerr() { std::cerr.rdbuf(old); }
-};
+#include "TestFixtures.cpp"
 
 TEST_CASE("checkHandle returns true for non-null/non-invalid") {
     SetLastError(5);

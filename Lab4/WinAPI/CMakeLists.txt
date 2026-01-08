@@ -53,10 +53,11 @@ add_executable(lab4_tests
         Tests/ExceptionHandlerTests.cpp
         Tests/SenderTests.cpp
         Tests/ReceiverTests.cpp
+        Tests/TestFixtures.cpp
 )
 target_link_libraries(lab4_tests PRIVATE doctest::doctest)
 target_include_directories(lab4_tests PRIVATE Headers)
-add_dependencies(lab4_tests Sender Receiver)
+#add_dependencies(lab4_tests Sender Receiver)
 
 include(CTest)
 enable_testing()

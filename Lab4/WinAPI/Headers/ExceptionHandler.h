@@ -1,6 +1,7 @@
 #ifndef LAB4_WINAPI_EXCEPTIONHANDLER_H
 #define LAB4_WINAPI_EXCEPTIONHANDLER_H
 
+#define NOMINMAX
 #include <windows.h>
 #include <string>
 #include <iostream>

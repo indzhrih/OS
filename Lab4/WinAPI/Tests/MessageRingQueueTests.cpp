@@ -2,19 +2,11 @@
 #include "../Headers/MessageRingQueue.h"
 #include <cstdio>
 #include <string>
-
-static void prepare_ring_file(const std::string& fname, int capacity) {
-    FILE* f = std::fopen(fname.c_str(), "wb");
-    int head = 0, tail = 0;
-    std::fwrite(&capacity, sizeof(int), 1, f);
-    std::fwrite(&head, sizeof(int), 1, f);
-    std::fwrite(&tail, sizeof(int), 1, f);
-    std::fclose(f);
-}
+#include "TestFixtures.cpp"
 
 TEST_CASE("MessageRingQueue ctor + add/read basic roundtrip") {
     const std::string file = "test_ring_basic.bin";
-    prepare_ring_file(file, 3);
+    TestFixtures::prepare_ring_file(file, 3);
 
     MessageRingQueue q(file);
     Message in{}; in.text[0] = 'h'; in.text[1] = 'i';
@@ -24,11 +16,12 @@ TEST_CASE("MessageRingQueue ctor + add/read basic roundtrip") {
     q.readMessage(out);
 
     CHECK(out.text[0] == 'h');
+    TestFixtures::cleanup_file(file);
 }
 
 TEST_CASE("MessageRingQueue wrap-around works on small capacity") {
     const std::string file = "test_ring_wrap.bin";
-    prepare_ring_file(file, 2);
+    TestFixtures::prepare_ring_file(file, 2);
 
     MessageRingQueue q(file);
 
@@ -42,11 +35,12 @@ TEST_CASE("MessageRingQueue wrap-around works on small capacity") {
     q.readMessage(out);
 
     CHECK(out.text[0] == 'A');
+    TestFixtures::cleanup_file(file);
 }
 
 TEST_CASE("MessageRingQueue second read returns second enqueued") {
     const std::string file = "test_ring_order.bin";
-    prepare_ring_file(file, 2);
+    TestFixtures::prepare_ring_file(file, 2);
 
     MessageRingQueue q(file);
 
@@ -61,4 +55,5 @@ TEST_CASE("MessageRingQueue second read returns second enqueued") {
     q.readMessage(out2);
 
     CHECK(out2.text[0] == 'Y');
+    TestFixtures::cleanup_file(file);
 }
