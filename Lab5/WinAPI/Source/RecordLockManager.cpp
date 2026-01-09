@@ -1,70 +1,49 @@
 #include "../Headers/RecordLockManager.h"
 
 RecordLockManager::RecordLockManager() {
-    InitializeCriticalSection(&criticalSection);
-    readersCount = 0;
-    writeLocked = false;
 }
 
-RecordLockManager::~RecordLockManager() {
-    DeleteCriticalSection(&criticalSection);
-}
-
-bool RecordLockManager::beginRead() {
-    EnterCriticalSection(&criticalSection);
-
-    if (writeLocked) {
-        LeaveCriticalSection(&criticalSection);
-        return false;
-    }
-
-    readersCount++;
-    LeaveCriticalSection(&criticalSection);
+bool RecordLockManager::beginRead(int employeeId) {
+    std::lock_guard<std::mutex> lock(mutex);
+    LockInfo& info = locks[employeeId];
+    if (info.writeLocked) return false;
+    ++info.readersCount;
     return true;
 }
 
-bool RecordLockManager::beginWrite() {
-    EnterCriticalSection(&criticalSection);
-
-    if (writeLocked || readersCount > 0) {
-        LeaveCriticalSection(&criticalSection);
-        return false;
-    }
-
-    writeLocked = true;
-    LeaveCriticalSection(&criticalSection);
+bool RecordLockManager::beginWrite(int employeeId) {
+    std::lock_guard<std::mutex> lock(mutex);
+    LockInfo& info = locks[employeeId];
+    if (info.writeLocked || info.readersCount > 0) return false;
+    info.writeLocked = true;
     return true;
 }
 
-bool RecordLockManager::endRead() {
-    EnterCriticalSection(&criticalSection);
-
-    if (readersCount <= 0) {
-        LeaveCriticalSection(&criticalSection);
-        return false;
-    }
-
-    readersCount--;
-    LeaveCriticalSection(&criticalSection);
+bool RecordLockManager::endRead(int employeeId) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = locks.find(employeeId);
+    if (it == locks.end()) return false;
+    LockInfo& info = it->second;
+    if (info.readersCount <= 0) return false;
+    --info.readersCount;
+    if (info.readersCount == 0 && !info.writeLocked) locks.erase(it);
     return true;
 }
 
-bool RecordLockManager::endWrite() {
-    EnterCriticalSection(&criticalSection);
-
-    if (!writeLocked) {
-        LeaveCriticalSection(&criticalSection);
-        return false;
-    }
-
-    writeLocked = false;
-    LeaveCriticalSection(&criticalSection);
+bool RecordLockManager::endWrite(int employeeId) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = locks.find(employeeId);
+    if (it == locks.end()) return false;
+    LockInfo& info = it->second;
+    if (!info.writeLocked) return false;
+    info.writeLocked = false;
+    if (info.readersCount == 0) locks.erase(it);
     return true;
 }
 
-bool RecordLockManager::hasWriter() {
-    EnterCriticalSection(&criticalSection);
-    bool result = writeLocked;
-    LeaveCriticalSection(&criticalSection);
-    return result;
+bool RecordLockManager::hasWriter(int employeeId) const {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = locks.find(employeeId);
+    if (it == locks.end()) return false;
+    return it->second.writeLocked;
 }

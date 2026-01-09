@@ -10,8 +10,7 @@ ServerHandler::ServerHandler(EmployeeStorage* employeeStorageValue, PipeServer* 
 }
 
 void ServerHandler::run() {
-    bool clientConnected = pipeServer->waitForClient();
-    if (!clientConnected) return;
+    if (!pipeServer->waitForClient()) return;
 
     while (isRunning) {
         PipeRequest request;
@@ -31,15 +30,17 @@ void ServerHandler::run() {
 }
 
 void ServerHandler::handleReadRequest(PipeRequest& request, PipeResponse& response) {
-    if (!recordLockManager->beginRead()) {
+    int employeeId = request.employeeId;
+
+    if (!recordLockManager->beginRead(employeeId)) {
         response.status = PIPE_RESPONSE_INVALID_STATE;
         return;
     }
 
     employee record;
-    bool found = employeeStorage->readEmployee(request.employeeId, record);
+    bool found = employeeStorage->readEmployee(employeeId, record);
     if (!found) {
-        recordLockManager->endRead();
+        recordLockManager->endRead(employeeId);
         response.status = PIPE_RESPONSE_NOT_FOUND;
         return;
     }
@@ -49,15 +50,17 @@ void ServerHandler::handleReadRequest(PipeRequest& request, PipeResponse& respon
 }
 
 void ServerHandler::handleBeginModifyRequest(PipeRequest& request, PipeResponse& response) {
-    if (!recordLockManager->beginWrite()) {
+    int employeeId = request.employeeId;
+
+    if (!recordLockManager->beginWrite(employeeId)) {
         response.status = PIPE_RESPONSE_INVALID_STATE;
         return;
     }
 
     employee record;
-    bool found = employeeStorage->readEmployee(request.employeeId, record);
+    bool found = employeeStorage->readEmployee(employeeId, record);
     if (!found) {
-        recordLockManager->endWrite();
+        recordLockManager->endWrite(employeeId);
         response.status = PIPE_RESPONSE_NOT_FOUND;
         return;
     }
@@ -67,12 +70,14 @@ void ServerHandler::handleBeginModifyRequest(PipeRequest& request, PipeResponse&
 }
 
 void ServerHandler::handleCommitModifyRequest(PipeRequest& request, PipeResponse& response) {
-    if (!recordLockManager->hasWriter()) {
+    int employeeId = request.employeeId;
+
+    if (!recordLockManager->hasWriter(employeeId)) {
         response.status = PIPE_RESPONSE_INVALID_STATE;
         return;
     }
 
-    bool written = employeeStorage->writeEmployee(request.employeeId, request.employeeData);
+    bool written = employeeStorage->writeEmployee(employeeId, request.employeeData);
     if (!written) {
         response.status = PIPE_RESPONSE_NOT_FOUND;
         return;
@@ -82,9 +87,12 @@ void ServerHandler::handleCommitModifyRequest(PipeRequest& request, PipeResponse
     response.employeeData = request.employeeData;
 }
 
-void ServerHandler::handleEndAccessRequest(PipeRequest&, PipeResponse& response) {
-    bool writerExists = recordLockManager->hasWriter();
-    bool lockReleased = writerExists ? recordLockManager->endWrite() : recordLockManager->endRead();
+void ServerHandler::handleEndAccessRequest(PipeRequest& request, PipeResponse& response) {
+    int employeeId = request.employeeId;
+
+    bool lockReleased = false;
+    if (recordLockManager->hasWriter(employeeId)) lockReleased = recordLockManager->endWrite(employeeId);
+    else lockReleased = recordLockManager->endRead(employeeId);
 
     if (!lockReleased) {
         response.status = PIPE_RESPONSE_INVALID_STATE;
@@ -103,15 +111,12 @@ DWORD WINAPI ServerHandlerThread(LPVOID parameter) {
     try {
         ServerHandler* handler = static_cast<ServerHandler*>(parameter);
         if (handler != NULL) handler->run();
-    }
-    catch (const std::exception& exception) {
+    } catch (const std::exception& exception) {
         ExceptionHandler::printError("ServerHandlerThread exception: " + std::string(exception.what()));
         return 1;
-    }
-    catch (...) {
+    } catch (...) {
         ExceptionHandler::printError("ServerHandlerThread unknown exception");
         return 1;
     }
-
     return 0;
 }
