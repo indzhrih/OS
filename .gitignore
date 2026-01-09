@@ -2,3 +2,4 @@
 cmake-build-*/
 Lab1/tests/input_data/
 Reports*/
+build*/
